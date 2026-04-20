@@ -1,0 +1,14 @@
+# ML / Signal Recognition — install with: pip install -r requirements_ml.txt
+# Run AFTER requirements_video.txt
+
+# Video downloading
+yt-dlp>=2024.1.0
+
+# Deep learning (CPU is fine for training on this dataset size)
+torch>=2.2.0
+torchvision>=0.17.0
+
+# Already in requirements_video.txt but listed for clarity
+opencv-python>=4.9.0
+numpy>=1.24.0
+scikit-learn>=1.4.0
