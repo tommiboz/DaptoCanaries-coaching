@@ -299,6 +299,16 @@ def add_team(name):
     conn.close()
 
 
+def get_existing_match_keys():
+    """Return a set of (round, home_team_id, away_team_id) for duplicate detection."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT round, home_team_id, away_team_id FROM matches"
+    ).fetchall()
+    conn.close()
+    return {(r[0], r[1], r[2]) for r in rows}
+
+
 def delete_match(match_id):
     conn = get_conn()
     c = conn.cursor()
