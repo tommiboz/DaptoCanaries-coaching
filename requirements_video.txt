@@ -1,0 +1,28 @@
+# Video Analysis — separate requirements (local only, NOT deployed to cloud)
+# Install with: pip install -r requirements_video.txt
+
+# Core video / CV
+opencv-python>=4.9.0
+numpy>=1.24.0
+
+# YOLOv8 person detection
+ultralytics>=8.1.0
+
+# ByteTrack tracking
+supervision>=0.19.0
+
+# OCR for jersey numbers
+easyocr>=1.7.1
+
+# Team colour clustering
+scikit-learn>=1.4.0
+
+# PyQt6 desktop UI
+PyQt6>=6.6.0
+
+# GPU acceleration (optional — install separately if you have an NVIDIA GPU)
+# torch>=2.2.0
+# torchvision>=0.17.0
+
+# Shared with Streamlit hub
+pandas>=2.0.0

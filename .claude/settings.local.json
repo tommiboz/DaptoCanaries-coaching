@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(echo:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(python -c \"\nimport os\n\nbase = ''C:/Users/Tommi Bozinovski/OneDrive/Desktop/irl_coaching''\nos.makedirs\\(f''{base}/pages'', exist_ok=True\\)\n\n# requirements.txt\nwith open\\(f''{base}/requirements.txt'', ''w''\\) as f:\n    f.write\\(''''''streamlit>=1.32.0\npandas>=2.0.0\nplotly>=5.18.0\nopenpyxl>=3.1.0\n''''''\\)\n\nprint\\(''requirements.txt written''\\)\n\")",
+      "Bash(cmd /c:*)"
+    ]
+  }
+}
