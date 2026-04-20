@@ -82,6 +82,7 @@ def init_db():
         c.execute("INSERT OR IGNORE INTO teams (name, is_dapto) VALUES (?, ?)", (name, is_dapto))
 
     init_video_tables(c)
+    init_referee_tables(c)
 
     conn.commit()
     conn.close()
@@ -295,6 +296,121 @@ def add_team(name):
     conn = get_conn()
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO teams (name, is_dapto) VALUES (?, 0)", (name,))
+    conn.commit()
+    conn.close()
+
+
+def init_referee_tables(cursor):
+    """Create referee tracking tables. Safe to call multiple times."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS referees (
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            name    TEXT UNIQUE NOT NULL,
+            notes   TEXT DEFAULT ""
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS referee_events (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id        INTEGER REFERENCES matches(id),
+            referee_id      INTEGER NOT NULL REFERENCES referees(id),
+            event_type      TEXT NOT NULL,
+            penalty_type    TEXT DEFAULT "",
+            team_penalised  TEXT DEFAULT "",
+            field_zone      TEXT DEFAULT "",
+            tackle_number   INTEGER DEFAULT 0,
+            game_minute     INTEGER DEFAULT 0,
+            half            INTEGER DEFAULT 1,
+            was_called      INTEGER DEFAULT 1,
+            notes           TEXT DEFAULT "",
+            created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS referee_10m_measurements (
+            id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id              INTEGER REFERENCES video_sessions(id),
+            match_id                INTEGER REFERENCES matches(id),
+            referee_id              INTEGER REFERENCES referees(id),
+            frame_number            INTEGER,
+            set_number              INTEGER DEFAULT 0,
+            play_the_ball_x         REAL,
+            play_the_ball_y         REAL,
+            nearest_defender_dist_m REAL,
+            team_side               TEXT DEFAULT "",
+            created_at              TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+
+def add_referee(name: str) -> int:
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("INSERT OR IGNORE INTO referees (name) VALUES (?)", (name,))
+    conn.commit()
+    row = conn.execute("SELECT id FROM referees WHERE name = ?", (name,)).fetchone()
+    conn.close()
+    return row[0] if row else -1
+
+
+def get_referees():
+    conn = get_conn()
+    df = __import__("pandas").read_sql_query(
+        "SELECT * FROM referees ORDER BY name", conn
+    )
+    conn.close()
+    return df
+
+
+def insert_referee_event(match_id, referee_id, event_type, penalty_type="",
+                         team_penalised="", field_zone="", tackle_number=0,
+                         game_minute=0, half=1, was_called=1, notes=""):
+    conn = get_conn()
+    conn.execute("""
+        INSERT INTO referee_events
+            (match_id, referee_id, event_type, penalty_type, team_penalised,
+             field_zone, tackle_number, game_minute, half, was_called, notes)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+    """, (match_id, referee_id, event_type, penalty_type, team_penalised,
+          field_zone, tackle_number, game_minute, half, was_called, notes))
+    conn.commit()
+    conn.close()
+
+
+def get_referee_events(referee_id=None):
+    conn = get_conn()
+    if referee_id:
+        df = __import__("pandas").read_sql_query("""
+            SELECT re.*, r.name as referee_name,
+                   ht.name as home_team, at.name as away_team, m.round
+            FROM referee_events re
+            JOIN referees r ON re.referee_id = r.id
+            LEFT JOIN matches m ON re.match_id = m.id
+            LEFT JOIN teams ht ON m.home_team_id = ht.id
+            LEFT JOIN teams at ON m.away_team_id = at.id
+            WHERE re.referee_id = ?
+            ORDER BY re.created_at DESC
+        """, conn, params=(referee_id,))
+    else:
+        df = __import__("pandas").read_sql_query("""
+            SELECT re.*, r.name as referee_name,
+                   ht.name as home_team, at.name as away_team, m.round
+            FROM referee_events re
+            JOIN referees r ON re.referee_id = r.id
+            LEFT JOIN matches m ON re.match_id = m.id
+            LEFT JOIN teams ht ON m.home_team_id = ht.id
+            LEFT JOIN teams at ON m.away_team_id = at.id
+            ORDER BY re.created_at DESC
+        """, conn)
+    conn.close()
+    return df
+
+
+def delete_referee_event(event_id: int):
+    conn = get_conn()
+    conn.execute("DELETE FROM referee_events WHERE id = ?", (event_id,))
     conn.commit()
     conn.close()
 
